@@ -13,6 +13,7 @@ const keyboard = {
     properties: {
         value: '',
         capsLock: false,
+        shift: false,
     },
 
     init() {
@@ -44,7 +45,7 @@ const keyboard = {
             "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "backspace",
             "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]",
             "caps", "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "enter",
-            "z", "x", "c", "v", "b", "n", "m", ",", ".", "?",
+            "shift", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/",
             "done", "space",
         ];
 
@@ -56,7 +57,7 @@ const keyboard = {
         // Create keys
         keyLayout.forEach(key => {
             const keyElement = document.createElement('button');
-            const insertLineBreak = ['backspace', ']', 'enter', '?'].indexOf(key) !== -1;
+            const insertLineBreak = ['backspace', ']', 'enter', '/'].indexOf(key) !== -1;
 
             // Add attributes
             keyElement.classList.add('keyboard__key');
@@ -72,8 +73,17 @@ const keyboard = {
                     });
                     break;
 
+                case 'shift':
+                    keyElement.classList.add('keyboard__key--wide', 'keyboard__key--activate', 'shift');
+                    keyElement.innerHTML = createIconHTML('upload');
+                    keyElement.addEventListener('click', () => {
+                        this._toggleShift();
+                        keyElement.classList.toggle('keyboard__key--active', this.properties.shift);
+                    });
+                    break;
+
                 case 'caps':
-                    keyElement.classList.add('keyboard__key--wide', 'keyboard__key--activate');
+                    keyElement.classList.add('keyboard__key--wide', 'keyboard__key--activate', 'caps');
                     keyElement.innerHTML = createIconHTML('keyboard_capslock');
                     keyElement.addEventListener('click', () => {
                         this._toggleCapsLock();
@@ -112,7 +122,7 @@ const keyboard = {
                 default:
                     keyElement.textContent = key.toLowerCase();
                     keyElement.addEventListener('click', () => {
-                        this.properties.value += this.properties.capsLock ? key.toUpperCase() : key.toLowerCase();
+                        this.properties.value += (this.properties.capsLock || this.properties.shift) ? key.toUpperCase() && keyElement.textContent : key.toLowerCase() && keyElement.textContent;
                         this._triggerEvent('oninput');
                     });
                     break;
@@ -124,7 +134,6 @@ const keyboard = {
                 fragment.append(document.createElement('br'));
             }
         });
-
         return fragment;
     },
 
@@ -137,10 +146,82 @@ const keyboard = {
     _toggleCapsLock() {
         this.properties.capsLock = !this.properties.capsLock;
 
+        //  Shift-Key is blocking  when CapsLock-Key is true
+        if (this.properties.capsLock) {
+            document.querySelector('.shift').disabled = true;
+        } else {
+            document.querySelector('.shift').disabled = false;
+        }
+
         for (const key of this.elements.keys) {
             //  Check keys and set parameter UpperCase/LowerCase (for CapsLock)
             if (key.childElementCount === 0) {
                 key.textContent = this.properties.capsLock ? key.textContent.toUpperCase() : key.textContent.toLowerCase();
+            }
+        }
+    },
+
+    _toggleShift() {
+        this.properties.shift = !this.properties.shift;
+
+        //  CapsLock-Key is blocking when Shift-Key is true
+        if (this.properties.shift) {
+            document.querySelector('.caps').disabled = true;
+        } else {
+            document.querySelector('.caps').disabled = false;
+        }
+
+        const specialValues = {
+            "/": '?',
+            "?": '/',
+            '-': '_',
+            '_': '-',
+            '=': '+',
+            '+': '=',
+            '[': '{',
+            '{': '[',
+            ']': '}',
+            '}': ']',
+            ';': ':',
+            ':': ';',
+            "'": '"',
+            '"': "'",
+            ',': '<',
+            '<': ',',
+            '.': '>',
+            '>': '.',
+            '1': '!',
+            '!': '1',
+            '2': '@',
+            '@': '2',
+            '3': '#',
+            '#': '3',
+            '4': '$',
+            '$': '4',
+            '5': '%',
+            '%': '5',
+            '6': '^',
+            '^': '6',
+            '7': '&',
+            '&': '7',
+            '8': '*',
+            '*': '8',
+            '9': '(',
+            '(': '9',
+            '0': ')',
+            ')': '0',
+        };
+
+        for (const key of this.elements.keys) {
+
+            if (key.childElementCount === 0) {
+                let property = key.textContent;
+
+                if (property in specialValues) {
+                    key.textContent = specialValues[property];
+                } else {
+                    key.textContent = this.properties.shift ? key.textContent.toUpperCase() : key.textContent.toLowerCase();
+                }
             }
         }
     },
